@@ -13049,6 +13049,34 @@ screen 120 cells wide. The fixed build passes in 9 s.
 The frames are `before-new-pane`, `after-new-pane` and `after-navigator`
 under `TUIOS_E2E_FRAMES`, in the test's folder. Repeat from `e2e/tui` with
 `TUIOS_E2E=1 TUIOS_E2E_BIN=/path/to/tuios go test -count=1 -run '^TestScrollingRevealsANewPane$' -v .`.
+
+## A wide first column leaves the first new pane cut off (issue 1507, another way in)
+
+`TestScrollingWideFirstNewPaneIsRevealed` (`scroll_first_new_pane_test.go`)
+starts a client at 100x30 with `scroll_column_width = 90` and one pane, puts
+the session in the scrolling layout, and opens two panes. Each must be wholly
+on screen. The first column leaves 10 cells at the right edge, so the first new
+pane's column is a peek there with no keyboard step, which is the case the
+#1507 test does not reach. The second new pane's column starts off screen, and
+the least-scroll rule always moved the strip for it, so that pane is a guard,
+not a control. Two doors: the layout picked from the palette and the pane
+opened with `n` (the report's steps), and the layout set in the config with the
+pane opened by `tuios new-window`.
+
+Run on 2026-11-08 on Linux. The test passes in 16 s on main at 54fa78f.
+
+| Control | Door | Where it fails | Verdict |
+| --- | --- | --- | --- |
+| v0.12.1 (850335c) | palette and key | "the first new pane: the new pane is not wholly on screen: {X:90 Width:90}" | **caught** |
+| v0.12.1 (850335c) | config and cli | the same | **caught** |
+| main at 54fa78f, `focusOnNew` ignored in `adoptScrollStrip` | palette and key | the same | **caught** |
+| main at 54fa78f, `focusOnNew` ignored in `adoptScrollStrip` | config and cli | the same | **caught** |
+
+The frames are `before-first-new-pane`, `after-first-new-pane` and
+`after-second-new-pane` under `TUIOS_E2E_FRAMES`, in each door's folder.
+Repeat from `e2e/tui` with
+`TUIOS_E2E=1 TUIOS_E2E_BIN=/path/to/tuios go test -count=1 -run '^TestScrollingWideFirstNewPaneIsRevealed$' -v .`.
+
 ## The review's file list scrolls its own paths
 
 `TestReviewListKeysScrollThePaths` opens a review on the file list, with one
